@@ -162,7 +162,7 @@ class RemoteLessonRepository implements LessonRepository {
         orElse: () => LessonType.text,
       ),
       content: json['content'],
-      order: int.tryParse(json['order']?.toString() ?? '0') ?? 0,
+      order: int.tryParse(json['lesson_order']?.toString() ?? '0') ?? 0,
       resources: resources,
     );
   }

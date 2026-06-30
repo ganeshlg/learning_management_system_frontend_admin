@@ -215,7 +215,7 @@ class _CreateCoursePageState extends ConsumerState<CreateCoursePage> {
                             Expanded(
                               child: TextFormField(
                                 controller: _priceController,
-                                decoration: const InputDecoration(labelText: 'Price (\$)', border: OutlineInputBorder()),
+                                decoration: const InputDecoration(labelText: 'Price (\₹)', border: OutlineInputBorder()),
                                 keyboardType: TextInputType.number,
                                 validator: (v) => v!.isEmpty ? 'Required' : null,
                               ),

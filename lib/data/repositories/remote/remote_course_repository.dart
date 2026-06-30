@@ -190,7 +190,7 @@ class RemoteCourseRepository implements CourseRepository {
       instructorName: json['instructor_name'] ?? '',
       metaTitle: json['meta_title'],
       metaDescription: json['meta_description'],
-      status: json['is_published'] == 1 || json['is_published'] == '1'
+      status: json['is_published'] == true || json['is_published'] == 'true'
           ? CourseStatus.published
           : CourseStatus.draft,
       modules: []
