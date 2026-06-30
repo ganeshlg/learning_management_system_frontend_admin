@@ -1,6 +1,7 @@
 import 'package:get_it/get_it.dart';
 import 'package:learning_management_system_trainer/data/repositories/remote/remote_dashboard_repository.dart';
 import 'package:learning_management_system_trainer/data/repositories/remote/remote_activity_repository.dart';
+import 'package:learning_management_system_trainer/domain/constants/AppConstants.dart';
 import 'package:learning_management_system_trainer/domain/repositories/activity_repository.dart';
 import 'package:learning_management_system_trainer/data/repositories/remote/remote_admin_auth_repository.dart';
 import 'package:learning_management_system_trainer/data/repositories/remote/remote_lesson_repository.dart';
@@ -32,8 +33,7 @@ Future<void> initServiceLocator() async {
   //Network Manager
   getIt.registerLazySingleton<NetworkManager>(
         () => NetworkManager(
-      baseUrl: 'http://localhost:8000/api',
-      // baseUrl: 'https://learning-management-system-api-gateway-v1.onrender.com/api',
+      baseUrl: AppConstants.baseUrl,
       allowBadCertificates: false,
     ),
   );
