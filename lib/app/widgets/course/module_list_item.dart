@@ -51,7 +51,25 @@ class _ModuleListItemState extends State<ModuleListItem> {
               widget.module.title,
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
-            subtitle: Text('${widget.module.lessons.length} Lessons'),
+            subtitle: Row(
+              children: [
+                Icon(
+                  widget.module.type == ModuleType.live ? Icons.live_tv : Icons.video_library,
+                  size: 14,
+                  color: widget.module.type == ModuleType.live ? Colors.red : Colors.blue,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  widget.module.type == ModuleType.live ? 'Live' : 'Recorded',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: widget.module.type == ModuleType.live ? Colors.red : Colors.blue,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Text('${widget.module.lessons.length} Lessons'),
+              ],
+            ),
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -117,9 +135,6 @@ class _LessonTile extends StatelessWidget {
   Widget build(BuildContext context) {
     IconData icon;
     switch (lesson.lessonType) {
-      case LessonType.video:
-        icon = Icons.play_circle_outline;
-        break;
       case LessonType.text:
         icon = Icons.notes;
         break;

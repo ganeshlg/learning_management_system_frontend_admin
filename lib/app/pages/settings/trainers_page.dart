@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:learning_management_system_trainer/app/widgets/common/loading_dialog.dart';
 import 'package:learning_management_system_trainer/domain/entities/admin_role.dart';
 import 'package:learning_management_system_trainer/domain/entities/admin_user.dart';
 import 'package:learning_management_system_trainer/domain/repositories/trainer_repository.dart';
@@ -91,9 +92,14 @@ class TrainersPage extends ConsumerWidget {
                 email: emailController.text,
                 role: AdminRole.trainer,
               );
-              await getIt<TrainerRepository>().addTrainer(newTrainer);
-              ref.invalidate(trainersProvider);
-              if (context.mounted) Navigator.pop(context);
+              LoadingDialog.show(context, message: 'Adding trainer...');
+              try {
+                await getIt<TrainerRepository>().addTrainer(newTrainer);
+                ref.invalidate(trainersProvider);
+                if (context.mounted) Navigator.pop(context);
+              } finally {
+                if (context.mounted) LoadingDialog.hide(context);
+              }
             },
             child: const Text('Add'),
           ),
@@ -150,8 +156,13 @@ class _TrainersTable extends ConsumerWidget {
                     );
 
                     if (confirmed == true) {
-                      await getIt<TrainerRepository>().removeTrainer(trainer.id);
-                      ref.invalidate(trainersProvider);
+                      if (context.mounted) LoadingDialog.show(context, message: 'Removing trainer...');
+                      try {
+                        await getIt<TrainerRepository>().removeTrainer(trainer.id);
+                        ref.invalidate(trainersProvider);
+                      } finally {
+                        if (context.mounted) LoadingDialog.hide(context);
+                      }
                     }
                   },
                 ),
@@ -207,9 +218,14 @@ class _TrainersTable extends ConsumerWidget {
                   email: emailController.text,
                   role: selectedRole,
                 );
-                await getIt<TrainerRepository>().updateTrainer(updatedTrainer);
-                ref.invalidate(trainersProvider);
-                if (context.mounted) Navigator.pop(context);
+                LoadingDialog.show(context, message: 'Saving changes...');
+                try {
+                  await getIt<TrainerRepository>().updateTrainer(updatedTrainer);
+                  ref.invalidate(trainersProvider);
+                  if (context.mounted) Navigator.pop(context);
+                } finally {
+                  if (context.mounted) LoadingDialog.hide(context);
+                }
               },
               child: const Text('Save'),
             ),

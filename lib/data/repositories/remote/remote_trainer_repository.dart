@@ -1,4 +1,5 @@
 import 'package:learning_management_system_trainer/domain/entities/admin_user.dart';
+import 'package:learning_management_system_trainer/domain/repositories/activity_repository.dart';
 import 'package:learning_management_system_trainer/domain/repositories/trainer_repository.dart';
 import 'package:learning_management_system_trainer/domain/services/service_locator.dart';
 import 'package:learning_management_system_trainer/domain/repositories/admin_auth_repository.dart';
@@ -43,7 +44,7 @@ class RemoteTrainerRepository implements TrainerRepository {
     if (admin == null) throw Exception('Admin not logged in');
     final adminPassword = await _getAdminPassword();
 
-    return await getIt<NetworkManager>().post<AdminUser>(
+    final result = await getIt<NetworkManager>().post<AdminUser>(
       path: '/admin/trainers',
       body: {
         'admin_email': admin.email,
@@ -54,6 +55,13 @@ class RemoteTrainerRepository implements TrainerRepository {
       },
       converter: (json) => AdminUser.fromJson(json),
     );
+
+    getIt<ActivityRepository>().logActivity(
+      user: admin.name,
+      activity: 'Added trainer: ${trainer.name}',
+    );
+
+    return result;
   }
 
   @override
@@ -62,7 +70,7 @@ class RemoteTrainerRepository implements TrainerRepository {
     if (admin == null) throw Exception('Admin not logged in');
     final adminPassword = await _getAdminPassword();
 
-    return await getIt<NetworkManager>().put<AdminUser>(
+    final result = await getIt<NetworkManager>().put<AdminUser>(
       path: '/admin/trainers',
       body: {
         'admin_email': admin.email,
@@ -73,6 +81,13 @@ class RemoteTrainerRepository implements TrainerRepository {
       },
       converter: (json) => AdminUser.fromJson(json),
     );
+
+    getIt<ActivityRepository>().logActivity(
+      user: admin.name,
+      activity: 'Updated trainer: ${trainer.name}',
+    );
+
+    return result;
   }
 
   @override
@@ -93,6 +108,11 @@ class RemoteTrainerRepository implements TrainerRepository {
         'trainer_email': trainer.email,
       },
       converter: (json) => json,
+    );
+
+    getIt<ActivityRepository>().logActivity(
+      user: admin.name,
+      activity: 'Removed trainer: ${trainer.name}',
     );
   }
 }

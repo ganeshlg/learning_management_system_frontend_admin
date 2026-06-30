@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:learning_management_system_trainer/domain/repositories/admin_auth_repository.dart';
 import 'package:learning_management_system_trainer/domain/services/service_locator.dart';
 import 'package:learning_management_system_trainer/domain/screen_stabilizer/screen_stabilizer.dart';
@@ -12,8 +11,8 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  final _emailController = TextEditingController(text: 'admin@civilent.com');
-  final _passwordController = TextEditingController(text: 'password');
+  final _emailController = TextEditingController(text: '');
+  final _passwordController = TextEditingController(text: '');
   bool _isLoading = false;
   String? _errorMessage;
 
@@ -24,16 +23,24 @@ class _LoginPageState extends State<LoginPage> {
     });
 
     try {
-      final user = await getIt<AdminAuthRepository>().login(
-        _emailController.text,
-        _passwordController.text,
-      );
 
-      if (user == null) {
+      if(_emailController.text.isEmpty || _passwordController.text.isEmpty){
         setState(() {
-          _errorMessage = 'Invalid email or password';
+          _errorMessage = 'Please enter both email and password';
         });
+      }else {
+        final user = await getIt<AdminAuthRepository>().login(
+          _emailController.text,
+          _passwordController.text,
+        );
+
+        if (user == null) {
+          setState(() {
+            _errorMessage = 'Invalid email or password';
+          });
+        }
       }
+
     } catch (e) {
       setState(() {
         _errorMessage = 'An error occurred. Please try again.';

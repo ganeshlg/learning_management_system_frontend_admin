@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:learning_management_system_trainer/app/widgets/common/loading_dialog.dart';
 import 'package:learning_management_system_trainer/domain/entities/course.dart';
 import 'package:learning_management_system_trainer/domain/entities/course_status.dart';
 import 'package:learning_management_system_trainer/domain/repositories/course_repository.dart';
@@ -73,12 +74,14 @@ class _CoursesTable extends ConsumerWidget {
         scrollDirection: Axis.horizontal,
         child: SingleChildScrollView(
           child: DataTable(
+            headingRowColor: WidgetStateProperty.all(Colors.grey[50]),
             columns: const [
               DataColumn(label: Text('Thumbnail')),
               DataColumn(label: Text('Course Title')),
               DataColumn(label: Text('Instructor')),
-              DataColumn(label: Text('Price')),
-              DataColumn(label: Text('Modules')),
+              DataColumn(label: Text('Price'), numeric: true),
+              DataColumn(label: Text('Duration'), numeric: true),
+              DataColumn(label: Text('Modules'), numeric: true),
               DataColumn(label: Text('Status')),
               DataColumn(label: Text('Actions')),
             ],
@@ -86,41 +89,93 @@ class _CoursesTable extends ConsumerWidget {
               return DataRow(cells: [
                 DataCell(
                   Container(
-                    width: 50,
-                    height: 30,
-                    color: Colors.grey.shade200,
-                    child: const Icon(Icons.image, size: 16),
+                    width: 60,
+                    height: 40,
+                    margin: const EdgeInsets.symmetric(vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[200],
+                      borderRadius: BorderRadius.circular(4),
+                      image: course.thumbnailUrl != null
+                          ? DecorationImage(
+                              image: NetworkImage(course.thumbnailUrl!),
+                              fit: BoxFit.cover,
+                            )
+                          : null,
+                    ),
+                    child: course.thumbnailUrl == null
+                        ? const Icon(Icons.image, size: 20, color: Colors.grey)
+                        : null,
                   ),
                 ),
-                DataCell(Text(course.title)),
+                DataCell(
+                  SizedBox(
+                    width: 200,
+                    child: Text(
+                      course.title,
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ),
                 DataCell(Text(course.instructorName)),
-                DataCell(Text('\$${course.price}')),
+                DataCell(Text('₹${course.price.toStringAsFixed(0)}')),
+                DataCell(Text('${course.durationHours}h')),
                 DataCell(Text(course.modules.length.toString())),
                 DataCell(_StatusBadge(status: course.status)),
                 DataCell(
                   Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       IconButton(
-                        icon: const Icon(Icons.edit, color: Colors.blue),
+                        icon: const Icon(Icons.edit, color: Colors.blue, size: 20),
                         onPressed: () => context.go('/courses/${course.id}'),
-                        tooltip: 'Edit',
+                        tooltip: 'Edit Course',
                       ),
                       IconButton(
-                        icon: const Icon(Icons.delete, color: Colors.red),
+                        icon: const Icon(Icons.delete, color: Colors.red, size: 20),
                         onPressed: () async {
-                          await getIt<CourseRepository>().deleteCourse(course.id);
-                          ref.invalidate(coursesProvider);
+                          final confirm = await showDialog<bool>(
+                            context: context,
+                            builder: (context) => AlertDialog(
+                              title: const Text('Delete Course'),
+                              content: Text('Are you sure you want to delete "${course.title}"? This will remove all associated modules and lessons.'),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.pop(context, false),
+                                  child: const Text('Cancel'),
+                                ),
+                                TextButton(
+                                  onPressed: () => Navigator.pop(context, true),
+                                  child: const Text('Delete', style: TextStyle(color: Colors.red)),
+                                ),
+                              ],
+                            ),
+                          );
+                          if (confirm == true) {
+                            if (context.mounted) LoadingDialog.show(context, message: 'Deleting course...');
+                            try {
+                              await getIt<CourseRepository>().deleteCourse(course.id);
+                              ref.invalidate(coursesProvider);
+                            } finally {
+                              if (context.mounted) LoadingDialog.hide(context);
+                            }
+                          }
                         },
-                        tooltip: 'Delete',
+                        tooltip: 'Delete Course',
                       ),
                       if (course.status == CourseStatus.draft)
                         IconButton(
-                          icon: const Icon(Icons.publish, color: Colors.green),
+                          icon: const Icon(Icons.publish, color: Colors.green, size: 20),
                           onPressed: () async {
-                            await getIt<CourseRepository>().publishCourse(course.id);
-                            ref.invalidate(coursesProvider);
+                            LoadingDialog.show(context, message: 'Publishing course...');
+                            try {
+                              await getIt<CourseRepository>().publishCourse(course.id);
+                              ref.invalidate(coursesProvider);
+                            } finally {
+                              if (context.mounted) LoadingDialog.hide(context);
+                            }
                           },
-                          tooltip: 'Publish',
+                          tooltip: 'Publish Course',
                         ),
                     ],
                   ),
@@ -148,9 +203,6 @@ class _StatusBadge extends StatelessWidget {
         break;
       case CourseStatus.draft:
         color = Colors.orange;
-        break;
-      case CourseStatus.archived:
-        color = Colors.grey;
         break;
     }
 

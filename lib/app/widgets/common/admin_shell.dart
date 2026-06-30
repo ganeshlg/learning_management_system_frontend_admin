@@ -89,11 +89,6 @@ class AppDrawer extends ConsumerWidget {
             label: 'Courses',
             route: '/courses',
           ),
-          _DrawerItem(
-            icon: Icons.video_call,
-            label: 'Live Sessions',
-            route: '/live-sessions',
-          ),
           if (isSuperAdmin)
             _DrawerItem(
               icon: Icons.people,

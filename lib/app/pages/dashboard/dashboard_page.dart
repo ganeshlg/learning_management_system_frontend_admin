@@ -1,13 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:learning_management_system_trainer/domain/entities/activity.dart';
 import 'package:learning_management_system_trainer/domain/entities/dashboard_stats.dart';
 import 'package:learning_management_system_trainer/domain/repositories/dashboard_repository.dart';
 import 'package:learning_management_system_trainer/domain/services/service_locator.dart';
 import 'package:learning_management_system_trainer/domain/screen_stabilizer/screen_stabilizer.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:intl/intl.dart';
 
 final dashboardStatsProvider = FutureProvider<DashboardStats>((ref) async {
   return await getIt<DashboardRepository>().getDashboardStats();
+});
+
+final recentActivitiesProvider = FutureProvider<List<Activity>>((ref) async {
+  return await getIt<DashboardRepository>().getRecentActivities();
 });
 
 class DashboardPage extends ConsumerWidget {
@@ -37,85 +43,72 @@ class DashboardPage extends ConsumerWidget {
                 error: (e, st) => Text('Error: $e'),
               ),
               const SizedBox(height: 32),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    flex: 2,
-                    child: _ChartCard(
-                      title: 'Enrollment Trends',
-                      child: AspectRatio(
-                        aspectRatio: 1.5,
-                        child: LineChart(
-                          LineChartData(
-                            gridData: const FlGridData(show: false),
-                            titlesData: const FlTitlesData(show: false),
-                            borderData: FlBorderData(show: false),
-                            lineBarsData: [
-                              LineChartBarData(
-                                spots: [
-                                  const FlSpot(0, 3),
-                                  const FlSpot(2, 2),
-                                  const FlSpot(4, 5),
-                                  const FlSpot(6, 3.5),
-                                  const FlSpot(8, 4),
-                                  const FlSpot(10, 7),
-                                ],
-                                isCurved: true,
-                                color: Theme.of(context).colorScheme.primary,
-                                barWidth: 4,
-                                dotData: const FlDotData(show: false),
-                                belowBarData: BarAreaData(
-                                  show: true,
-                                  color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+              statsAsync.when(
+                data: (stats) => Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      flex: 1,
+                      child: _ChartCard(
+                        title: 'Enrollment Trends',
+                        child: AspectRatio(
+                          aspectRatio: 10,
+                          child: LineChart(
+                            LineChartData(
+                              gridData: const FlGridData(show: true, drawVerticalLine: false),
+                              titlesData: FlTitlesData(
+                                show: true,
+                                rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                                topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                                bottomTitles: AxisTitles(
+                                  sideTitles: SideTitles(
+                                    showTitles: true,
+                                    reservedSize: 30,
+                                    interval: 1,
+                                    getTitlesWidget: (value, meta) {
+                                      if (value.toInt() >= 0 && value.toInt() < stats.enrollmentTrend.length) {
+                                        final month = stats.enrollmentTrend[value.toInt()].month;
+                                        // Display only the month name or part of the string
+                                        return Text(month.split('-').last, style: const TextStyle(fontSize: 10));
+                                      }
+                                      return const Text('');
+                                    },
+                                  ),
                                 ),
                               ),
-                            ],
+                              borderData: FlBorderData(show: true, border: Border.all(color: Colors.grey.shade300)),
+                              lineBarsData: [
+                                LineChartBarData(
+                                  spots: stats.enrollmentTrend.asMap().entries.map((e) {
+                                    return FlSpot(e.key.toDouble(), e.value.count.toDouble());
+                                  }).toList(),
+                                  isCurved: true,
+                                  color: Theme.of(context).colorScheme.primary,
+                                  barWidth: 4,
+                                  dotData: const FlDotData(show: true),
+                                  belowBarData: BarAreaData(
+                                    show: true,
+                                    color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 24),
-                  Expanded(
-                    child: _ChartCard(
-                      title: 'Course Distribution',
-                      child: AspectRatio(
-                        aspectRatio: 1,
-                        child: PieChart(
-                          PieChartData(
-                            sections: [
-                              PieChartSectionData(
-                                color: Theme.of(context).colorScheme.primary,
-                                value: 40,
-                                title: 'Web',
-                                radius: 50,
-                                titleStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                              ),
-                              PieChartSectionData(
-                                color: Theme.of(context).colorScheme.secondary,
-                                value: 30,
-                                title: 'Business',
-                                radius: 50,
-                                titleStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                              ),
-                              PieChartSectionData(
-                                color: Theme.of(context).colorScheme.tertiary,
-                                value: 30,
-                                title: 'Design',
-                                radius: 50,
-                                titleStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
+                    const SizedBox(width: 24),
+                  ],
+                ),
+                loading: () => const SizedBox.shrink(),
+                error: (e, st) => const SizedBox.shrink(),
               ),
               const SizedBox(height: 32),
-              const _RecentActivityTable(),
+              statsAsync.when(
+                data: (stats) => _RecentActivityTable(activities: stats.recentActivities),
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (e, st) => Text('Error loading activities: $e'),
+              ),
             ],
           ),
         ),
@@ -146,7 +139,6 @@ class _DashboardStatsGrid extends StatelessWidget {
             _StatCard(title: 'Total Modules', value: stats.totalModules.toString(), icon: Icons.view_module, color: Colors.orange),
             _StatCard(title: 'Total Lessons', value: stats.totalLessons.toString(), icon: Icons.play_lesson, color: Colors.green),
             _StatCard(title: 'Total Students', value: stats.totalStudents.toString(), icon: Icons.people, color: Colors.purple),
-            _StatCard(title: 'Live Sessions', value: stats.activeLiveSessions.toString(), icon: Icons.live_tv, color: Colors.red),
           ],
         );
       },
@@ -214,7 +206,8 @@ class _ChartCard extends StatelessWidget {
 }
 
 class _RecentActivityTable extends StatelessWidget {
-  const _RecentActivityTable();
+  final List<Activity> activities;
+  const _RecentActivityTable({required this.activities});
 
   @override
   Widget build(BuildContext context) {
@@ -241,9 +234,11 @@ class _RecentActivityTable extends StatelessWidget {
                     Padding(padding: EdgeInsets.all(12), child: Text('Date', style: TextStyle(fontWeight: FontWeight.bold))),
                   ],
                 ),
-                _activityRow('Course "Flutter Basics" Published', 'Admin Jane', '2 hours ago'),
-                _activityRow('New Student Enrolled', 'John Doe', '5 hours ago'),
-                _activityRow('Live Session Scheduled', 'Admin Jane', 'Yesterday'),
+                ...activities.map((activity) => _activityRow(
+                      activity.activity,
+                      activity.user,
+                      DateFormat('MMM dd, HH:mm').format(activity.timestamp),
+                    )),
               ],
             ),
           ],

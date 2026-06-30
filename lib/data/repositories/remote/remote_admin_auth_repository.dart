@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:learning_management_system_trainer/domain/entities/admin_user.dart';
+import 'package:learning_management_system_trainer/domain/repositories/activity_repository.dart';
 import '../../../domain/repositories/admin_auth_repository.dart';
 import '../../../domain/services/service_locator.dart';
 import '../../network/network_manager.dart';
@@ -30,6 +31,11 @@ class RemoteAdminAuthRepository implements AdminAuthRepository {
       _currentUser = adminUser;
       _password = password;
       _controller.add(_currentUser);
+
+      getIt<ActivityRepository>().logActivity(
+        user: _currentUser!.name,
+        activity: 'Logged in',
+      );
     } catch (e) {
       _currentUser = null;
       _password = null;
@@ -40,6 +46,12 @@ class RemoteAdminAuthRepository implements AdminAuthRepository {
 
   @override
   Future<void> logout() async {
+    if (_currentUser != null) {
+      getIt<ActivityRepository>().logActivity(
+        user: _currentUser!.name,
+        activity: 'Logged out',
+      );
+    }
     _currentUser = null;
     _password = null;
     _controller.add(null);

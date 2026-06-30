@@ -7,8 +7,6 @@ import 'package:learning_management_system_trainer/app/pages/dashboard/dashboard
 import 'package:learning_management_system_trainer/app/pages/courses/courses_page.dart';
 import 'package:learning_management_system_trainer/app/pages/courses/create_course_page.dart';
 import 'package:learning_management_system_trainer/app/pages/courses/edit_course_page.dart';
-import 'package:learning_management_system_trainer/app/pages/live_sessions/live_sessions_page.dart';
-import 'package:learning_management_system_trainer/app/pages/resources/resources_page.dart';
 import 'package:learning_management_system_trainer/app/pages/settings/trainers_page.dart';
 import 'package:learning_management_system_trainer/app/widgets/common/admin_shell.dart';
 import 'package:learning_management_system_trainer/domain/repositories/admin_auth_repository.dart';
@@ -58,10 +56,6 @@ final routerProvider = Provider<GoRouter>((ref) {
                 builder: (context, state) => EditCoursePage(id: state.pathParameters['id']!),
               ),
             ],
-          ),
-          GoRoute(
-            path: '/live-sessions',
-            builder: (context, state) => const LiveSessionsPage(),
           ),
           GoRoute(
             path: '/trainers',

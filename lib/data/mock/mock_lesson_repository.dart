@@ -17,12 +17,6 @@ class MockLessonRepository implements LessonRepository {
       moduleId: lesson.moduleId,
       title: lesson.title,
       lessonType: lesson.lessonType,
-      videoUrl: lesson.videoUrl,
-      pdfUrl: lesson.pdfUrl,
-      assignmentInstructions: lesson.assignmentInstructions,
-      quizReferenceId: lesson.quizReferenceId,
-      sessionDate: lesson.sessionDate,
-      sessionLink: lesson.sessionLink,
       order: lesson.order,
     );
     MockData.lessons.add(newLesson);
@@ -57,12 +51,6 @@ class MockLessonRepository implements LessonRepository {
           moduleId: lesson.moduleId,
           title: lesson.title,
           lessonType: lesson.lessonType,
-          videoUrl: lesson.videoUrl,
-          pdfUrl: lesson.pdfUrl,
-          assignmentInstructions: lesson.assignmentInstructions,
-          quizReferenceId: lesson.quizReferenceId,
-          sessionDate: lesson.sessionDate,
-          sessionLink: lesson.sessionLink,
           order: i,
         );
       }

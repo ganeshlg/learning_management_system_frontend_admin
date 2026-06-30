@@ -5,7 +5,6 @@ import 'package:learning_management_system_trainer/domain/entities/course_status
 import 'package:learning_management_system_trainer/domain/entities/lesson.dart';
 import 'package:learning_management_system_trainer/domain/entities/module.dart';
 import 'package:learning_management_system_trainer/domain/entities/live_session.dart';
-import 'package:learning_management_system_trainer/domain/entities/resource.dart';
 
 class MockData {
   static final superAdmin = AdminUser(
@@ -31,32 +30,32 @@ class MockData {
       id: 'lesson-001',
       moduleId: 'module-001',
       title: 'Introduction to HTML',
-      lessonType: LessonType.video,
-      videoUrl: 'https://example.com/video1.mp4',
+      lessonType: LessonType.text,
+      content: 'This is a lesson about HTML introduction',
       order: 0,
     ),
     Lesson(
       id: 'lesson-002',
       moduleId: 'module-001',
       title: 'HTML Tags & Attributes',
-      lessonType: LessonType.video,
-      videoUrl: 'https://example.com/video2.mp4',
+      lessonType: LessonType.text,
+      content: 'Learn about HTML tags and attributes',
       order: 1,
     ),
     Lesson(
       id: 'lesson-003',
       moduleId: 'module-001',
       title: 'HTML Forms',
-      lessonType: LessonType.video,
-      videoUrl: 'https://example.com/video3.mp4',
+      lessonType: LessonType.text,
+      content: 'Creating forms in HTML',
       order: 2,
     ),
     Lesson(
       id: 'lesson-004',
       moduleId: 'module-002',
       title: 'CSS Selectors',
-      lessonType: LessonType.video,
-      videoUrl: 'https://example.com/video4.mp4',
+      lessonType: LessonType.text,
+      content: 'Understanding CSS Selectors',
       order: 0,
     ),
   ];
@@ -111,15 +110,6 @@ class MockData {
       startTime: DateTime.now().add(const Duration(days: 1)),
       endTime: DateTime.now().add(const Duration(days: 1, hours: 1)),
       meetingUrl: 'https://zoom.us/j/123456789',
-    ),
-  ];
-
-  static List<Resource> resources = [
-     Resource(
-      id: 'res-1',
-      name: 'HTML Cheat Sheet',
-      type: ResourceType.pdf,
-      courseId: 'course-001',
     ),
   ];
 }

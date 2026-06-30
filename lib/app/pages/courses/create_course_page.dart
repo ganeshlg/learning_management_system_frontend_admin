@@ -1,20 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:learning_management_system_trainer/app/widgets/common/loading_dialog.dart';
+import 'package:learning_management_system_trainer/app/pages/courses/courses_page.dart';
+import 'package:learning_management_system_trainer/app/pages/dashboard/dashboard_page.dart';
+import 'package:learning_management_system_trainer/domain/constants/AppConstants.dart';
 import 'package:learning_management_system_trainer/domain/entities/course.dart';
 import 'package:learning_management_system_trainer/domain/entities/course_status.dart';
 import 'package:learning_management_system_trainer/domain/repositories/course_repository.dart';
+import 'package:learning_management_system_trainer/domain/repositories/file_upload_repository.dart';
 import 'package:learning_management_system_trainer/domain/services/service_locator.dart';
 import 'package:learning_management_system_trainer/domain/screen_stabilizer/screen_stabilizer.dart';
 
-class CreateCoursePage extends StatefulWidget {
+class CreateCoursePage extends ConsumerStatefulWidget {
   const CreateCoursePage({super.key});
 
   @override
-  State<CreateCoursePage> createState() => _CreateCoursePageState();
+  ConsumerState<CreateCoursePage> createState() => _CreateCoursePageState();
 }
 
-class _CreateCoursePageState extends State<CreateCoursePage> {
+class _CreateCoursePageState extends ConsumerState<CreateCoursePage> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
@@ -24,13 +30,12 @@ class _CreateCoursePageState extends State<CreateCoursePage> {
   final _metaTitleController = TextEditingController();
   final _metaDescriptionController = TextEditingController();
   CourseStatus _status = CourseStatus.draft;
-
-  bool _isSaving = false;
+  String? _thumbnailUrl;
 
   Future<void> _saveCourse() async {
     if (!_formKey.currentState!.validate()) return;
 
-    setState(() => _isSaving = true);
+    LoadingDialog.show(context, message: _status == CourseStatus.published ? 'Publishing course...' : 'Saving course...');
 
     try {
       final newCourse = Course(
@@ -43,23 +48,58 @@ class _CreateCoursePageState extends State<CreateCoursePage> {
         metaTitle: _metaTitleController.text,
         metaDescription: _metaDescriptionController.text,
         status: _status,
+        thumbnailUrl: _thumbnailUrl,
       );
 
       await getIt<CourseRepository>().createCourse(newCourse);
-      if (mounted) {
-        context.pop();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Course created successfully')),
-        );
-      }
+      
+      // Invalidate providers to refresh the list and dashboard
+      ref.invalidate(coursesProvider);
+      ref.invalidate(dashboardStatsProvider);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error: $e')),
         );
       }
+      rethrow;
     } finally {
-      if (mounted) setState(() => _isSaving = false);
+      if (context.mounted) LoadingDialog.hide(context);
+    }
+
+    if (mounted) {
+      context.pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Course created successfully')),
+      );
+    }
+  }
+
+  Future<void> _pickImage() async {
+    final ImagePicker picker = ImagePicker();
+    final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+    if (image != null) {
+      LoadingDialog.show(context, message: 'Uploading thumbnail...');
+      try {
+        final bytes = await image.readAsBytes();
+        final uploadPath = await getIt<FileUploadRepository>().uploadBytes(
+          bytes,
+          image.name,
+          folder: 'course_thumbnails',
+        );
+        final url = AppConstants.baseUrl + (uploadPath.startsWith('/') ? uploadPath : '/$uploadPath');
+        setState(() {
+          _thumbnailUrl = url;
+        });
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Upload failed: $e')),
+          );
+        }
+      } finally {
+        if (context.mounted) LoadingDialog.hide(context);
+      }
     }
   }
 
@@ -72,14 +112,14 @@ class _CreateCoursePageState extends State<CreateCoursePage> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: OutlinedButton(
-              onPressed: _isSaving ? null : () => _saveCourse(),
+              onPressed: () => _saveCourse(),
               child: const Text('Save Draft'),
             ),
           ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: ElevatedButton(
-              onPressed: _isSaving ? null : () {
+              onPressed: () {
                 _status = CourseStatus.published;
                 _saveCourse();
               },
@@ -108,17 +148,58 @@ class _CreateCoursePageState extends State<CreateCoursePage> {
                     padding: const EdgeInsets.all(24.0),
                     child: Column(
                       children: [
-                        TextFormField(
-                          controller: _titleController,
-                          decoration: const InputDecoration(labelText: 'Course Title', border: OutlineInputBorder()),
-                          validator: (v) => v!.isEmpty ? 'Required' : null,
-                        ),
-                        const SizedBox(height: 16),
-                        TextFormField(
-                          controller: _descriptionController,
-                          decoration: const InputDecoration(labelText: 'Description', border: OutlineInputBorder()),
-                          maxLines: 4,
-                          validator: (v) => v!.isEmpty ? 'Required' : null,
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            GestureDetector(
+                              onTap: _pickImage,
+                              child: Container(
+                                width: 160,
+                                height: 120,
+                                decoration: BoxDecoration(
+                                  color: Colors.grey[200],
+                                  borderRadius: BorderRadius.circular(8),
+                                  image: _thumbnailUrl != null
+                                      ? DecorationImage(
+                                          image: NetworkImage(_thumbnailUrl!),
+                                          fit: BoxFit.cover,
+                                        )
+                                      : null,
+                                ),
+                                child: _thumbnailUrl == null
+                                    ? const Column(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          Icon(Icons.add_a_photo, size: 32, color: Colors.grey),
+                                          SizedBox(height: 8),
+                                          Text('Upload Thumbnail',
+                                              style: TextStyle(fontSize: 12, color: Colors.grey),
+                                              textAlign: TextAlign.center),
+                                        ],
+                                      )
+                                    : null,
+                              ),
+                            ),
+                            const SizedBox(width: 24),
+                            Expanded(
+                              child: Column(
+                                children: [
+                                  TextFormField(
+                                    controller: _titleController,
+                                    decoration: const InputDecoration(labelText: 'Course Title', border: OutlineInputBorder()),
+                                    validator: (v) => v!.isEmpty ? 'Required' : null,
+                                  ),
+                                  const SizedBox(height: 16),
+                                  TextFormField(
+                                    controller: _descriptionController,
+                                    decoration: const InputDecoration(labelText: 'Description', border: OutlineInputBorder()),
+                                    maxLines: 2,
+                                    validator: (v) => v!.isEmpty ? 'Required' : null,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
                         const SizedBox(height: 16),
                         Row(
