@@ -435,21 +435,23 @@ class _EditCoursePageState extends ConsumerState<EditCoursePage> {
                 ],
               ),
             );
-            if (confirm == true) {
-              if (context.mounted) LoadingDialog.show(context, message: 'Deleting module...');
-              try {
-                await getIt<ModuleRepository>().deleteModule(module.id);
-                ref.invalidate(courseModulesProvider(widget.id));
-              } finally {
-                if (context.mounted) LoadingDialog.hide(context);
+              if (confirm == true) {
+                if (context.mounted) LoadingDialog.show(context, message: 'Deleting module...');
+                try {
+                  await getIt<ModuleRepository>().deleteModule(module.id);
+                  ref.invalidate(courseModulesProvider(widget.id));
+                  ref.invalidate(dashboardStatsProvider);
+                } finally {
+                  if (context.mounted) LoadingDialog.hide(context);
+                }
               }
-            }
           },
           onLessonsReordered: (lessonIds) async {
             LoadingDialog.show(context, message: 'Reordering lessons...');
             try {
               await getIt<LessonRepository>().reorderLessons(lessonIds);
               ref.invalidate(courseModulesProvider(widget.id));
+              ref.invalidate(dashboardStatsProvider);
             } finally {
               if (context.mounted) LoadingDialog.hide(context);
             }
@@ -461,6 +463,7 @@ class _EditCoursePageState extends ConsumerState<EditCoursePage> {
             try {
               await getIt<LessonRepository>().deleteLesson(lessonId);
               ref.invalidate(courseModulesProvider(widget.id));
+              ref.invalidate(dashboardStatsProvider);
             } finally {
               if (context.mounted) LoadingDialog.hide(context);
             }
@@ -560,6 +563,7 @@ class _EditCoursePageState extends ConsumerState<EditCoursePage> {
                       ),
                     );
                     ref.invalidate(courseModulesProvider(widget.id));
+                    ref.invalidate(dashboardStatsProvider);
                   } finally {
                     if (context.mounted) LoadingDialog.hide(context);
                   }
@@ -663,6 +667,7 @@ class _EditCoursePageState extends ConsumerState<EditCoursePage> {
                   try {
                     await getIt<LessonRepository>().updateLesson(updatedLesson);
                     ref.invalidate(courseModulesProvider(widget.id));
+                    ref.invalidate(dashboardStatsProvider);
                   } finally {
                     if (context.mounted) LoadingDialog.hide(context);
                   }
@@ -769,6 +774,7 @@ class _EditCoursePageState extends ConsumerState<EditCoursePage> {
                   try {
                     await getIt<LessonRepository>().createLesson(newLesson);
                     ref.invalidate(courseModulesProvider(widget.id));
+                    ref.invalidate(dashboardStatsProvider);
                   } finally {
                     if (context.mounted) LoadingDialog.hide(context);
                   }
@@ -994,6 +1000,7 @@ class _EditCoursePageState extends ConsumerState<EditCoursePage> {
                       ),
                     );
                     ref.invalidate(courseModulesProvider(widget.id));
+                    ref.invalidate(dashboardStatsProvider);
                   } finally {
                     if (context.mounted) LoadingDialog.hide(context);
                   }

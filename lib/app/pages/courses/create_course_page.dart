@@ -27,13 +27,13 @@ class _CreateCoursePageState extends ConsumerState<CreateCoursePage> {
   final _instructorController = TextEditingController();
   final _priceController = TextEditingController();
   final _durationController = TextEditingController();
-  final _metaTitleController = TextEditingController();
-  final _metaDescriptionController = TextEditingController();
   CourseStatus _status = CourseStatus.draft;
   String? _thumbnailUrl;
 
   Future<void> _saveCourse() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
 
     LoadingDialog.show(context, message: _status == CourseStatus.published ? 'Publishing course...' : 'Saving course...');
 
@@ -45,8 +45,8 @@ class _CreateCoursePageState extends ConsumerState<CreateCoursePage> {
         instructorName: _instructorController.text,
         price: double.tryParse(_priceController.text) ?? 0.0,
         durationHours: int.tryParse(_durationController.text) ?? 0,
-        metaTitle: _metaTitleController.text,
-        metaDescription: _metaDescriptionController.text,
+        metaTitle: '',
+        metaDescription: '',
         status: _status,
         thumbnailUrl: _thumbnailUrl,
       );
@@ -151,34 +151,56 @@ class _CreateCoursePageState extends ConsumerState<CreateCoursePage> {
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            GestureDetector(
-                              onTap: _pickImage,
-                              child: Container(
-                                width: 160,
-                                height: 120,
-                                decoration: BoxDecoration(
-                                  color: Colors.grey[200],
-                                  borderRadius: BorderRadius.circular(8),
-                                  image: _thumbnailUrl != null
-                                      ? DecorationImage(
-                                          image: NetworkImage(_thumbnailUrl!),
-                                          fit: BoxFit.cover,
-                                        )
-                                      : null,
-                                ),
-                                child: _thumbnailUrl == null
-                                    ? const Column(
-                                        mainAxisAlignment: MainAxisAlignment.center,
-                                        children: [
-                                          Icon(Icons.add_a_photo, size: 32, color: Colors.grey),
-                                          SizedBox(height: 8),
-                                          Text('Upload Thumbnail',
-                                              style: TextStyle(fontSize: 12, color: Colors.grey),
-                                              textAlign: TextAlign.center),
-                                        ],
-                                      )
-                                    : null,
-                              ),
+                            FormField<String>(
+                              validator: (value) => _thumbnailUrl == null ? 'Required' : null,
+                              builder: (state) {
+                                return Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    GestureDetector(
+                                      onTap: () async {
+                                        await _pickImage();
+                                        state.didChange(_thumbnailUrl);
+                                      },
+                                      child: Container(
+                                        width: 160,
+                                        height: 120,
+                                        decoration: BoxDecoration(
+                                          color: Colors.grey[200],
+                                          borderRadius: BorderRadius.circular(8),
+                                          border: state.hasError ? Border.all(color: Colors.red) : null,
+                                          image: _thumbnailUrl != null
+                                              ? DecorationImage(
+                                                  image: NetworkImage(_thumbnailUrl!),
+                                                  fit: BoxFit.cover,
+                                                )
+                                              : null,
+                                        ),
+                                        child: _thumbnailUrl == null
+                                            ? const Column(
+                                                mainAxisAlignment: MainAxisAlignment.center,
+                                                children: [
+                                                  Icon(Icons.add_a_photo, size: 32, color: Colors.grey),
+                                                  SizedBox(height: 8),
+                                                  Text('Upload Thumbnail',
+                                                      style: TextStyle(fontSize: 12, color: Colors.grey),
+                                                      textAlign: TextAlign.center),
+                                                ],
+                                              )
+                                            : null,
+                                      ),
+                                    ),
+                                    if (state.hasError)
+                                      Padding(
+                                        padding: const EdgeInsets.only(top: 8, left: 4),
+                                        child: Text(
+                                          state.errorText!,
+                                          style: const TextStyle(color: Colors.red, fontSize: 12),
+                                        ),
+                                      ),
+                                  ],
+                                );
+                              },
                             ),
                             const SizedBox(width: 24),
                             Expanded(
@@ -217,7 +239,11 @@ class _CreateCoursePageState extends ConsumerState<CreateCoursePage> {
                                 controller: _priceController,
                                 decoration: const InputDecoration(labelText: 'Price (\₹)', border: OutlineInputBorder()),
                                 keyboardType: TextInputType.number,
-                                validator: (v) => v!.isEmpty ? 'Required' : null,
+                                validator: (v) {
+                                  if (v == null || v.isEmpty) return 'Required';
+                                  if (double.tryParse(v) == null) return 'Invalid number';
+                                  return null;
+                                },
                               ),
                             ),
                           ],
@@ -227,28 +253,11 @@ class _CreateCoursePageState extends ConsumerState<CreateCoursePage> {
                           controller: _durationController,
                           decoration: const InputDecoration(labelText: 'Duration (Hours)', border: OutlineInputBorder()),
                           keyboardType: TextInputType.number,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 32),
-                _SectionHeader(title: 'SEO Information'),
-                const SizedBox(height: 16),
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24.0),
-                    child: Column(
-                      children: [
-                        TextFormField(
-                          controller: _metaTitleController,
-                          decoration: const InputDecoration(labelText: 'Meta Title', border: OutlineInputBorder()),
-                        ),
-                        const SizedBox(height: 16),
-                        TextFormField(
-                          controller: _metaDescriptionController,
-                          decoration: const InputDecoration(labelText: 'Meta Description', border: OutlineInputBorder()),
-                          maxLines: 2,
+                          validator: (v) {
+                            if (v == null || v.isEmpty) return 'Required';
+                            if (int.tryParse(v) == null) return 'Invalid number';
+                            return null;
+                          },
                         ),
                       ],
                     ),
