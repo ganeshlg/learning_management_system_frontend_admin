@@ -95,6 +95,12 @@ class AppDrawer extends ConsumerWidget {
               label: 'Trainers',
               route: '/trainers',
             ),
+          if (isSuperAdmin)
+            _DrawerItem(
+              icon: Icons.assignment_ind,
+              label: 'Enrollments',
+              route: '/enrollments',
+            ),
           const Spacer(),
           _DrawerItem(
             icon: Icons.logout,

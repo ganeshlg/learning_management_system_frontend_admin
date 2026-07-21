@@ -8,6 +8,7 @@ import 'package:learning_management_system_trainer/app/pages/courses/courses_pag
 import 'package:learning_management_system_trainer/app/pages/courses/create_course_page.dart';
 import 'package:learning_management_system_trainer/app/pages/courses/edit_course_page.dart';
 import 'package:learning_management_system_trainer/app/pages/settings/trainers_page.dart';
+import 'package:learning_management_system_trainer/app/pages/settings/enrollment_management_page.dart';
 import 'package:learning_management_system_trainer/app/widgets/common/admin_shell.dart';
 import 'package:learning_management_system_trainer/domain/repositories/admin_auth_repository.dart';
 import 'package:learning_management_system_trainer/domain/services/service_locator.dart';
@@ -60,6 +61,18 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/trainers',
             builder: (context, state) => const TrainersPage(),
+            redirect: (context, state) {
+              final authState = ref.read(authStateProvider);
+              final user = authState.value;
+              if (user?.role != AdminRole.superAdmin) {
+                return '/dashboard';
+              }
+              return null;
+            },
+          ),
+          GoRoute(
+            path: '/enrollments',
+            builder: (context, state) => const EnrollmentManagementPage(),
             redirect: (context, state) {
               final authState = ref.read(authStateProvider);
               final user = authState.value;

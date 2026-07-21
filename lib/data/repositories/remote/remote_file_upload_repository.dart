@@ -48,4 +48,21 @@ class RemoteFileUploadRepository implements FileUploadRepository {
 
     return url;
   }
+
+  @override
+  Future<void> deleteFile(String url) async {
+    final admin = await getIt<AdminAuthRepository>().getCurrentUser();
+    if (admin == null) throw Exception('Admin not logged in');
+    final adminPassword = await _getAdminPassword();
+
+    await getIt<NetworkManager>().delete(
+      path: '/admin/upload',
+      body: FormData.fromMap({
+        'admin_email': admin.email,
+        'admin_password': adminPassword,
+        'file_url': url,
+      }),
+      converter: (json) => json,
+    );
+  }
 }

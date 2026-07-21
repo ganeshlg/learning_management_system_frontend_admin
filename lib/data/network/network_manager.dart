@@ -21,7 +21,6 @@ class NetworkManager {
         receiveTimeout: receiveTimeout,
         sendTimeout: sendTimeout,
         headers: {
-          'Content-Type': 'application/json',
           'Accept': 'application/json',
         },
       ),

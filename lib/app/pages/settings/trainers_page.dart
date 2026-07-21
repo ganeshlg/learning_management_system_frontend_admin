@@ -1,6 +1,10 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'dart:io' as io;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:learning_management_system_trainer/app/widgets/common/loading_dialog.dart';
+import 'package:learning_management_system_trainer/domain/constants/AppConstants.dart';
 import 'package:learning_management_system_trainer/domain/entities/admin_role.dart';
 import 'package:learning_management_system_trainer/domain/entities/admin_user.dart';
 import 'package:learning_management_system_trainer/domain/repositories/trainer_repository.dart';
@@ -35,7 +39,7 @@ class TrainersPage extends ConsumerWidget {
                         ),
                   ),
                   ElevatedButton.icon(
-                    onPressed: () => _showAddTrainerDialog(context, ref),
+                    onPressed: () => _showTrainerFormDialog(context, ref),
                     icon: const Icon(Icons.person_add),
                     label: const Text('Add Trainer'),
                     style: ElevatedButton.styleFrom(
@@ -60,50 +64,146 @@ class TrainersPage extends ConsumerWidget {
     );
   }
 
-  void _showAddTrainerDialog(BuildContext context, WidgetRef ref) {
-    final nameController = TextEditingController();
-    final emailController = TextEditingController();
+  void _showTrainerFormDialog(BuildContext context, WidgetRef ref, {AdminUser? trainer}) {
+    final isEditing = trainer != null;
+    final nameController = TextEditingController(text: trainer?.name);
+    final emailController = TextEditingController(text: trainer?.email);
+    final descriptionController = TextEditingController(text: trainer?.profileDescription);
+    final experienceController = TextEditingController(text: trainer?.experienceYears?.toString());
+    final expertiseController = TextEditingController(text: trainer?.expertise?.join(', '));
+    final phoneController = TextEditingController(text: trainer?.phone);
+    final locationController = TextEditingController(text: trainer?.location);
+    final linkedinController = TextEditingController(text: trainer?.linkedinUrl);
+    final websiteController = TextEditingController(text: trainer?.websiteUrl);
+    String? localPhotoPath;
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Add New Trainer'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: nameController,
-              decoration: const InputDecoration(labelText: 'Full Name', border: OutlineInputBorder()),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: Text(isEditing ? 'Edit Trainer' : 'Add New Trainer'),
+          content: SingleChildScrollView(
+            child: SizedBox(
+              width: 500,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  GestureDetector(
+                    onTap: () async {
+                      final picker = ImagePicker();
+                      final photo = await picker.pickImage(source: ImageSource.gallery);
+                      if (photo != null) {
+                        setDialogState(() => localPhotoPath = photo.path);
+                      }
+                    },
+                    child: CircleAvatar(
+                      radius: 50,
+                      backgroundColor: Colors.grey[200],
+                      backgroundImage: localPhotoPath != null 
+                          ? (kIsWeb ? NetworkImage(localPhotoPath!) : FileImage(io.File(localPhotoPath!)) as ImageProvider)
+                          : (trainer?.photoUrl != null ? NetworkImage(trainer!.photoUrl!) : null),
+                      child: localPhotoPath == null && trainer?.photoUrl == null
+                          ? const Icon(Icons.camera_alt, size: 40, color: Colors.grey)
+                          : null,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: nameController,
+                    decoration: const InputDecoration(labelText: 'Full Name', border: OutlineInputBorder()),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: emailController,
+                    decoration: const InputDecoration(labelText: 'Email Address', border: OutlineInputBorder()),
+                    enabled: !isEditing,
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: phoneController,
+                    decoration: const InputDecoration(labelText: 'Phone', border: OutlineInputBorder()),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: locationController,
+                    decoration: const InputDecoration(labelText: 'Location', border: OutlineInputBorder()),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: experienceController,
+                    decoration: const InputDecoration(labelText: 'Experience (Years)', border: OutlineInputBorder()),
+                    keyboardType: TextInputType.number,
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: expertiseController,
+                    decoration: const InputDecoration(labelText: 'Expertise (Comma separated)', border: OutlineInputBorder(), hintText: 'PHP, Laravel, MySQL'),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: descriptionController,
+                    decoration: const InputDecoration(labelText: 'Profile Description', border: OutlineInputBorder()),
+                    maxLines: 3,
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: linkedinController,
+                    decoration: const InputDecoration(labelText: 'LinkedIn URL', border: OutlineInputBorder()),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: websiteController,
+                    decoration: const InputDecoration(labelText: 'Website URL', border: OutlineInputBorder()),
+                  ),
+                ],
+              ),
             ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: emailController,
-              decoration: const InputDecoration(labelText: 'Email Address', border: OutlineInputBorder()),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+            ElevatedButton(
+              onPressed: () async {
+                final expertiseList = expertiseController.text.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+                
+                final updatedTrainer = (trainer ?? AdminUser(
+                  id: 0,
+                  name: '',
+                  email: '',
+                  role: AdminRole.trainer,
+                )).copyWith(
+                  name: nameController.text,
+                  email: emailController.text,
+                  profileDescription: descriptionController.text,
+                  experienceYears: int.tryParse(experienceController.text),
+                  expertise: expertiseList,
+                  phone: phoneController.text,
+                  location: locationController.text,
+                  linkedinUrl: linkedinController.text,
+                  websiteUrl: websiteController.text,
+                  photoUrl: localPhotoPath ?? trainer?.photoUrl,
+                );
+
+                LoadingDialog.show(context, message: isEditing ? 'Saving changes...' : 'Adding trainer...');
+                try {
+                  if (isEditing) {
+                    await getIt<TrainerRepository>().updateTrainer(updatedTrainer);
+                  } else {
+                    await getIt<TrainerRepository>().addTrainer(updatedTrainer);
+                  }
+                  ref.invalidate(trainersProvider);
+                  if (context.mounted) Navigator.pop(context);
+                } catch (e) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+                  }
+                } finally {
+                  if (context.mounted) LoadingDialog.hide(context);
+                }
+              },
+              child: Text(isEditing ? 'Save' : 'Add'),
             ),
           ],
         ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-          ElevatedButton(
-            onPressed: () async {
-              final newTrainer = AdminUser(
-                id: DateTime.now().millisecondsSinceEpoch,
-                name: nameController.text,
-                email: emailController.text,
-                role: AdminRole.trainer,
-              );
-              LoadingDialog.show(context, message: 'Adding trainer...');
-              try {
-                await getIt<TrainerRepository>().addTrainer(newTrainer);
-                ref.invalidate(trainersProvider);
-                if (context.mounted) Navigator.pop(context);
-              } finally {
-                if (context.mounted) LoadingDialog.hide(context);
-              }
-            },
-            child: const Text('Add'),
-          ),
-        ],
       ),
     );
   }
@@ -125,16 +225,34 @@ class _TrainersTable extends ConsumerWidget {
           return ListTile(
             leading: CircleAvatar(
               backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-              child: Text(trainer.name[0].toUpperCase()),
+              backgroundImage: trainer.photoUrl != null ? NetworkImage("${AppConstants.baseUrl}/${trainer.photoUrl!}") : null,
+              child: trainer.photoUrl == null ? Text(trainer.name[0].toUpperCase()) : null,
             ),
             title: Text(trainer.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-            subtitle: Text(trainer.email),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(trainer.email),
+                if (trainer.expertise != null && trainer.expertise!.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4.0),
+                    child: Wrap(
+                      spacing: 4,
+                      children: trainer.expertise!.map((e) => Chip(
+                        label: Text(e, style: const TextStyle(fontSize: 10)),
+                        padding: EdgeInsets.zero,
+                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      )).toList(),
+                    ),
+                  ),
+              ],
+            ),
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 IconButton(
                   icon: const Icon(Icons.edit),
-                  onPressed: () => _showEditTrainerDialog(context, ref, trainer),
+                  onPressed: () => const TrainersPage()._showTrainerFormDialog(context, ref, trainer: trainer),
                 ),
                 IconButton(
                   icon: const Icon(Icons.delete, color: Colors.red),
@@ -170,67 +288,6 @@ class _TrainersTable extends ConsumerWidget {
             ),
           );
         },
-      ),
-    );
-  }
-
-  void _showEditTrainerDialog(BuildContext context, WidgetRef ref, AdminUser trainer) {
-    final nameController = TextEditingController(text: trainer.name);
-    final emailController = TextEditingController(text: trainer.email);
-    AdminRole selectedRole = trainer.role;
-
-    showDialog(
-      context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          title: const Text('Edit Trainer'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: nameController,
-                decoration: const InputDecoration(labelText: 'Full Name', border: OutlineInputBorder()),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: emailController,
-                decoration: const InputDecoration(labelText: 'Email Address', border: OutlineInputBorder()),
-              ),
-              const SizedBox(height: 16),
-              DropdownButtonFormField<AdminRole>(
-                value: selectedRole,
-                decoration: const InputDecoration(labelText: 'Role', border: OutlineInputBorder()),
-                items: AdminRole.values.map((role) {
-                  return DropdownMenuItem(value: role, child: Text(role.name.toUpperCase()));
-                }).toList(),
-                onChanged: (value) {
-                  if (value != null) setDialogState(() => selectedRole = value);
-                },
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-            ElevatedButton(
-              onPressed: () async {
-                final updatedTrainer = trainer.copyWith(
-                  name: nameController.text,
-                  email: emailController.text,
-                  role: selectedRole,
-                );
-                LoadingDialog.show(context, message: 'Saving changes...');
-                try {
-                  await getIt<TrainerRepository>().updateTrainer(updatedTrainer);
-                  ref.invalidate(trainersProvider);
-                  if (context.mounted) Navigator.pop(context);
-                } finally {
-                  if (context.mounted) LoadingDialog.hide(context);
-                }
-              },
-              child: const Text('Save'),
-            ),
-          ],
-        ),
       ),
     );
   }
