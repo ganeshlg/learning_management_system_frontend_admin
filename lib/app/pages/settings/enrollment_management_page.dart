@@ -3,6 +3,8 @@ import 'package:learning_management_system_trainer/domain/entities/admin_user.da
 import 'package:learning_management_system_trainer/domain/entities/course.dart';
 import 'package:learning_management_system_trainer/domain/repositories/course_repository.dart';
 import 'package:learning_management_system_trainer/domain/repositories/enrollment_repository.dart';
+import 'package:learning_management_system_trainer/domain/entities/student_user.dart';
+import 'package:learning_management_system_trainer/domain/repositories/student_repository.dart';
 import 'package:learning_management_system_trainer/domain/services/service_locator.dart';
 
 class EnrollmentManagementPage extends StatefulWidget {
@@ -15,31 +17,35 @@ class EnrollmentManagementPage extends StatefulWidget {
 class _EnrollmentManagementPageState extends State<EnrollmentManagementPage> {
   final _enrollmentRepo = getIt<EnrollmentRepository>();
   final _courseRepo = getIt<CourseRepository>();
+  final _studentRepo = getIt<StudentRepository>();
 
   List<Course> _courses = [];
   Course? _selectedCourse;
   List<AdminUser> _enrolledUsers = [];
+  List<StudentUser> _allStudents = [];
   bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
-    _loadCourses();
+    _loadInitialData();
   }
 
-  Future<void> _loadCourses() async {
+  Future<void> _loadInitialData() async {
     setState(() => _isLoading = true);
     try {
       final courses = await _courseRepo.getCourses();
+      final students = await _studentRepo.getAllUsers();
       setState(() {
         _courses = courses;
+        _allStudents = students;
         if (_courses.isNotEmpty) {
           _selectedCourse = _courses.first;
           _loadEnrolledUsers();
         }
       });
     } catch (e) {
-      _showError('Failed to load courses: $e');
+      _showError('Failed to load data: $e');
     } finally {
       setState(() => _isLoading = false);
     }
@@ -71,34 +77,80 @@ class _EnrollmentManagementPageState extends State<EnrollmentManagementPage> {
   }
 
   Future<void> _addUser() async {
-    final emailController = TextEditingController();
+    if (_selectedCourse == null) return;
+
+    final enrolledEmails = _enrolledUsers.map((u) => u.email).toSet();
+    final availableStudents = _allStudents.where((s) => !enrolledEmails.contains(s.email)).toList();
+
+    if (availableStudents.isEmpty) {
+      _showError('No more users available to enroll');
+      return;
+    }
+
+    StudentUser? selectedStudent;
+    String searchQuery = '';
+
     final result = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Enroll User'),
-        content: TextField(
-          controller: emailController,
-          decoration: const InputDecoration(
-            labelText: 'User Email',
-            hintText: 'user@example.com',
-          ),
-          keyboardType: TextInputType.emailAddress,
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Enroll'),
-          ),
-        ],
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          final filtered = availableStudents.where((s) =>
+            s.name.toLowerCase().contains(searchQuery.toLowerCase()) ||
+            s.email.toLowerCase().contains(searchQuery.toLowerCase())
+          ).toList();
+
+          return AlertDialog(
+            title: const Text('Enroll User'),
+            content: SizedBox(
+              width: 500,
+              height: 400,
+              child: Column(
+                children: [
+                  TextField(
+                    decoration: const InputDecoration(
+                      hintText: 'Search users...',
+                      prefixIcon: Icon(Icons.search),
+                    ),
+                    onChanged: (val) => setDialogState(() => searchQuery = val),
+                  ),
+                  const SizedBox(height: 16),
+                  Expanded(
+                    child: ListView.builder(
+                      itemCount: filtered.length,
+                      itemBuilder: (context, index) {
+                        final student = filtered[index];
+                        final isSelected = selectedStudent?.email == student.email;
+                        return ListTile(
+                          selected: isSelected,
+                          selectedTileColor: Colors.blue.withOpacity(0.1),
+                          leading: CircleAvatar(child: Text(student.name[0])),
+                          title: Text(student.name),
+                          subtitle: Text(student.email),
+                          onTap: () => setDialogState(() => selectedStudent = student),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+              ElevatedButton(
+                onPressed: selectedStudent == null ? null : () => Navigator.pop(context, true),
+                child: const Text('Enroll'),
+              ),
+            ],
+          );
+        },
       ),
     );
 
-    if (result == true && emailController.text.isNotEmpty && _selectedCourse != null) {
+    if (result == true && selectedStudent != null) {
       setState(() => _isLoading = true);
       try {
         await _enrollmentRepo.addUserToCourse(
-          email: emailController.text,
+          email: selectedStudent!.email,
           courseId: _selectedCourse!.id,
         );
         _showSuccess('User enrolled successfully');

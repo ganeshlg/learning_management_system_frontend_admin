@@ -97,6 +97,12 @@ class AppDrawer extends ConsumerWidget {
             ),
           if (isSuperAdmin)
             _DrawerItem(
+              icon: Icons.person_search,
+              label: 'User Management',
+              route: '/users',
+            ),
+          if (isSuperAdmin)
+            _DrawerItem(
               icon: Icons.assignment_ind,
               label: 'Enrollments',
               route: '/enrollments',

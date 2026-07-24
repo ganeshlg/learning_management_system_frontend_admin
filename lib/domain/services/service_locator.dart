@@ -14,7 +14,9 @@ import 'package:learning_management_system_trainer/domain/repositories/file_uplo
 import 'package:learning_management_system_trainer/domain/repositories/lesson_repository.dart';
 import 'package:learning_management_system_trainer/domain/repositories/module_repository.dart';
 import 'package:learning_management_system_trainer/data/repositories/remote/remote_enrollment_repository.dart';
+import 'package:learning_management_system_trainer/data/repositories/remote/remote_student_repository.dart';
 import 'package:learning_management_system_trainer/domain/repositories/enrollment_repository.dart';
+import 'package:learning_management_system_trainer/domain/repositories/student_repository.dart';
 import 'package:learning_management_system_trainer/domain/repositories/trainer_repository.dart';
 import '../../data/network/network_manager.dart';
 import '../../data/repositories/remote/remote_course_repository.dart';
@@ -32,6 +34,7 @@ Future<void> initServiceLocator() async {
   getIt.registerLazySingleton<FileUploadRepository>(() => RemoteFileUploadRepository());
   getIt.registerLazySingleton<ActivityRepository>(() => RemoteActivityRepository());
   getIt.registerLazySingleton<EnrollmentRepository>(() => RemoteEnrollmentRepository());
+  getIt.registerLazySingleton<StudentRepository>(() => RemoteStudentRepository());
 
   //Network Manager
   getIt.registerLazySingleton<NetworkManager>(
