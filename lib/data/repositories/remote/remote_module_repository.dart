@@ -37,6 +37,7 @@ class RemoteModuleRepository implements ModuleRepository {
         'type': module.type.name,
         'live_link': module.liveLink,
         'recorded_video_url': module.recordedVideoUrl,
+        'module_order': module.order,
       },
       converter: (json) => _mapJsonToModule(json),
     );
@@ -105,25 +106,11 @@ class RemoteModuleRepository implements ModuleRepository {
   }
 
   @override
-  Future<void> reorderModules(List<String> moduleIds) async {
-    final admin = await getIt<AdminAuthRepository>().getCurrentUser();
-    if (admin == null) throw Exception('Admin not logged in');
-    final adminPassword = await _getAdminPassword();
-
-    await getIt<NetworkManager>().post(
-      path: '/admin/modules/reorder',
-      body: {
-        'admin_email': admin.email,
-        'admin_password': adminPassword,
-        'module_ids': moduleIds,
-      },
-      converter: (json) => json,
-    );
-
-    getIt<ActivityRepository>().logActivity(
-      user: admin.name,
-      activity: 'Reordered modules',
-    );
+  Future<void> reorderModules(List<Module> modules) async {
+    for (int i = 0; i < modules.length; i++) {
+      final updatedModule = modules[i].copyWith(order: i);
+      await updateModule(updatedModule);
+    }
   }
 
   @override
@@ -144,6 +131,7 @@ class RemoteModuleRepository implements ModuleRepository {
         'type': module.type.name,
         'live_link': module.liveLink,
         'recorded_video_url': module.recordedVideoUrl,
+        'module_order': module.order,
       },
       converter: (json) => _mapJsonToModule(json),
     );
@@ -167,7 +155,7 @@ class RemoteModuleRepository implements ModuleRepository {
       type: typeStr == 'live' ? ModuleType.live : ModuleType.recorded,
       liveLink: json['live_link'],
       recordedVideoUrl: json['recorded_video_url'],
-      order: int.tryParse(json['order']?.toString() ?? '0') ?? 0,
+      order: int.tryParse(json['module_order']?.toString() ?? '0') ?? 0,
       lessons: [],
     );
   }

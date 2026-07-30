@@ -2,6 +2,7 @@ import 'package:learning_management_system_trainer/domain/entities/course.dart';
 
 abstract class CourseRepository {
   Future<List<Course>> getCourses();
+  Future<List<Course>> getCoursesForStudent({required String email, String? paymentPlan, int? paidInstallments});
   Future<Course?> getCourseById(String id);
   Future<Course> createCourse(Course course);
   Future<Course> updateCourse(Course course);

@@ -18,7 +18,12 @@ class RemoteEnrollmentRepository implements EnrollmentRepository {
   }
 
   @override
-  Future<void> addUserToCourse({required String email, required String courseId}) async {
+  Future<void> addUserToCourse({
+    required String email,
+    required String courseId,
+    String? paymentPlan,
+    int? paidInstallments,
+  }) async {
     final admin = await getIt<AdminAuthRepository>().getCurrentUser();
     if (admin == null) throw Exception('Admin not logged in');
     final adminPassword = await _getAdminPassword();
@@ -30,6 +35,8 @@ class RemoteEnrollmentRepository implements EnrollmentRepository {
         'admin_password': adminPassword,
         'email': email,
         'course_id': courseId,
+        'payment_plan': paymentPlan,
+        'paid_installments': paidInstallments,
       },
       converter: (json) => json,
     );

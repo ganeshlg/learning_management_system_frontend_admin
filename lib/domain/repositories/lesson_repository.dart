@@ -5,5 +5,5 @@ abstract class LessonRepository {
   Future<Lesson> createLesson(Lesson lesson);
   Future<Lesson> updateLesson(Lesson lesson);
   Future<void> deleteLesson(String id);
-  Future<void> reorderLessons(List<String> lessonIds);
+  Future<void> reorderLessons(List<Lesson> lessons);
 }

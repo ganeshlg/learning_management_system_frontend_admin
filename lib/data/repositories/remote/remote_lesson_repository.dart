@@ -35,6 +35,7 @@ class RemoteLessonRepository implements LessonRepository {
         'lesson_type': lesson.lessonType.name,
         'content': lesson.content,
         'resources': lesson.resources.map((r) => _resourceToMap(r)).toList(),
+        'lesson_order': lesson.order,
       },
       converter: (json) => _mapJsonToLesson(json),
     );
@@ -90,25 +91,11 @@ class RemoteLessonRepository implements LessonRepository {
   }
 
   @override
-  Future<void> reorderLessons(List<String> lessonIds) async {
-    final admin = await getIt<AdminAuthRepository>().getCurrentUser();
-    if (admin == null) throw Exception('Admin not logged in');
-    final adminPassword = await _getAdminPassword();
-
-    await getIt<NetworkManager>().post(
-      path: '/admin/lessons/reorder',
-      body: {
-        'admin_email': admin.email,
-        'admin_password': adminPassword,
-        'lesson_ids': lessonIds,
-      },
-      converter: (json) => json,
-    );
-
-    getIt<ActivityRepository>().logActivity(
-      user: admin.name,
-      activity: 'Reordered lessons',
-    );
+  Future<void> reorderLessons(List<Lesson> lessons) async {
+    for (int i = 0; i < lessons.length; i++) {
+      final updatedLesson = lessons[i].copyWith(order: i);
+      await updateLesson(updatedLesson);
+    }
   }
 
   @override
@@ -127,6 +114,7 @@ class RemoteLessonRepository implements LessonRepository {
         'lesson_type': lesson.lessonType.name,
         'content': lesson.content,
         'resources': lesson.resources.map((r) => _resourceToMap(r)).toList(),
+        'lesson_order': lesson.order,
       },
       converter: (json) => _mapJsonToLesson(json),
     );

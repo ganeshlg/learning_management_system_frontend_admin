@@ -88,6 +88,8 @@ class _EnrollmentManagementPageState extends State<EnrollmentManagementPage> {
     }
 
     StudentUser? selectedStudent;
+    String? selectedPaymentPlan = 'One-Time';
+    final paidInstallmentsController = TextEditingController(text: '1');
     String searchQuery = '';
 
     final result = await showDialog<bool>(
@@ -103,7 +105,7 @@ class _EnrollmentManagementPageState extends State<EnrollmentManagementPage> {
             title: const Text('Enroll User'),
             content: SizedBox(
               width: 500,
-              height: 400,
+              height: 550,
               child: Column(
                 children: [
                   TextField(
@@ -115,21 +117,60 @@ class _EnrollmentManagementPageState extends State<EnrollmentManagementPage> {
                   ),
                   const SizedBox(height: 16),
                   Expanded(
-                    child: ListView.builder(
-                      itemCount: filtered.length,
-                      itemBuilder: (context, index) {
-                        final student = filtered[index];
-                        final isSelected = selectedStudent?.email == student.email;
-                        return ListTile(
-                          selected: isSelected,
-                          selectedTileColor: Colors.blue.withOpacity(0.1),
-                          leading: CircleAvatar(child: Text(student.name[0])),
-                          title: Text(student.name),
-                          subtitle: Text(student.email),
-                          onTap: () => setDialogState(() => selectedStudent = student),
-                        );
-                      },
+                    child: Container(
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey.shade300),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: ListView.builder(
+                        itemCount: filtered.length,
+                        itemBuilder: (context, index) {
+                          final student = filtered[index];
+                          final isSelected = selectedStudent?.email == student.email;
+                          return ListTile(
+                            selected: isSelected,
+                            selectedTileColor: Colors.blue.withOpacity(0.1),
+                            leading: CircleAvatar(child: Text(student.name[0])),
+                            title: Text(student.name),
+                            subtitle: Text(student.email),
+                            onTap: () => setDialogState(() => selectedStudent = student),
+                          );
+                        },
+                      ),
                     ),
+                  ),
+                  const SizedBox(height: 16),
+                  const Divider(),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: DropdownButtonFormField<String>(
+                          value: selectedPaymentPlan,
+                          decoration: const InputDecoration(
+                            labelText: 'Payment Plan',
+                            border: OutlineInputBorder(),
+                          ),
+                          items: const [
+                            DropdownMenuItem(value: 'One-Time', child: Text('One-Time')),
+                            DropdownMenuItem(value: 'Two-Installment', child: Text('Two-Installment')),
+                            DropdownMenuItem(value: 'Three-Installment', child: Text('Three-Installment')),
+                          ],
+                          onChanged: (val) => setDialogState(() => selectedPaymentPlan = val),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: TextField(
+                          controller: paidInstallmentsController,
+                          decoration: const InputDecoration(
+                            labelText: 'Paid Installments',
+                            border: OutlineInputBorder(),
+                          ),
+                          keyboardType: TextInputType.number,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -152,6 +193,8 @@ class _EnrollmentManagementPageState extends State<EnrollmentManagementPage> {
         await _enrollmentRepo.addUserToCourse(
           email: selectedStudent!.email,
           courseId: _selectedCourse!.id,
+          paymentPlan: selectedPaymentPlan,
+          paidInstallments: int.tryParse(paidInstallmentsController.text) ?? 1,
         );
         _showSuccess('User enrolled successfully');
         _loadEnrolledUsers();

@@ -28,6 +28,8 @@ class StudentUser {
   final String? declaration;
   final String? signature;
   final String? declarationDate;
+  final String? paymentPlan;
+  final int? paidInstallments;
 
   StudentUser({
     required this.id,
@@ -59,6 +61,8 @@ class StudentUser {
     this.declaration,
     this.signature,
     this.declarationDate,
+    this.paymentPlan,
+    this.paidInstallments,
   });
 
   factory StudentUser.fromJson(Map<String, dynamic> json) {
@@ -92,6 +96,8 @@ class StudentUser {
       declaration: json['declaration'],
       signature: json['signature'],
       declarationDate: json['declaration_date'],
+      paymentPlan: json['payment_plan'],
+      paidInstallments: json['paid_installments'] is int ? json['paid_installments'] as int : int.tryParse(json['paid_installments']?.toString() ?? ''),
     );
   }
 
@@ -126,6 +132,8 @@ class StudentUser {
       'declaration': declaration,
       'signature': signature,
       'declaration_date': declarationDate,
+      'payment_plan': paymentPlan,
+      'paid_installments': paidInstallments,
     };
   }
 
@@ -159,6 +167,8 @@ class StudentUser {
     String? declaration,
     String? signature,
     String? declarationDate,
+    String? paymentPlan,
+    int? paidInstallments,
   }) {
     return StudentUser(
       id: id ?? this.id,
@@ -190,6 +200,8 @@ class StudentUser {
       declaration: declaration ?? this.declaration,
       signature: signature ?? this.signature,
       declarationDate: declarationDate ?? this.declarationDate,
+      paymentPlan: paymentPlan ?? this.paymentPlan,
+      paidInstallments: paidInstallments ?? this.paidInstallments,
     );
   }
 }

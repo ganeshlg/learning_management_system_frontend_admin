@@ -27,6 +27,12 @@ class _CreateCoursePageState extends ConsumerState<CreateCoursePage> {
   final _instructorController = TextEditingController();
   final _priceController = TextEditingController();
   final _durationController = TextEditingController();
+  final _singlePayController = TextEditingController(text: '0');
+  final _twoPay1Controller = TextEditingController(text: '0');
+  final _twoPay2Controller = TextEditingController(text: '0');
+  final _threePay1Controller = TextEditingController(text: '0');
+  final _threePay2Controller = TextEditingController(text: '0');
+  final _threePay3Controller = TextEditingController(text: '0');
   CourseStatus _status = CourseStatus.draft;
   String? _thumbnailUrl;
 
@@ -49,6 +55,12 @@ class _CreateCoursePageState extends ConsumerState<CreateCoursePage> {
         metaDescription: '',
         status: _status,
         thumbnailUrl: _thumbnailUrl,
+        singlePayModules: int.tryParse(_singlePayController.text) ?? 0,
+        twoPayFirstModules: int.tryParse(_twoPay1Controller.text) ?? 0,
+        twoPaySecondModules: int.tryParse(_twoPay2Controller.text) ?? 0,
+        threePayFirstModules: int.tryParse(_threePay1Controller.text) ?? 0,
+        threePaySecondModules: int.tryParse(_threePay2Controller.text) ?? 0,
+        threePayThirdModules: int.tryParse(_threePay3Controller.text) ?? 0,
       );
 
       await getIt<CourseRepository>().createCourse(newCourse);
@@ -259,6 +271,10 @@ class _CreateCoursePageState extends ConsumerState<CreateCoursePage> {
                             return null;
                           },
                         ),
+                        const SizedBox(height: 24),
+                        _SectionHeader(title: 'Payment-Based Module Access'),
+                        const SizedBox(height: 16),
+                        _buildPaymentPlanGrid(),
                       ],
                     ),
                   ),
@@ -268,6 +284,56 @@ class _CreateCoursePageState extends ConsumerState<CreateCoursePage> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildPaymentPlanGrid() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('One-Time Payment', style: TextStyle(fontWeight: FontWeight.bold)),
+        const SizedBox(height: 8),
+        _buildModuleInputField('Total Accessible Modules', _singlePayController),
+        const Divider(height: 32),
+        const Text('Two-Installment Plan', style: TextStyle(fontWeight: FontWeight.bold)),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Expanded(child: _buildModuleInputField('Modules after 1st Pay', _twoPay1Controller)),
+            const SizedBox(width: 16),
+            Expanded(child: _buildModuleInputField('Modules after 2nd Pay', _twoPay2Controller)),
+          ],
+        ),
+        const Divider(height: 32),
+        const Text('Three-Installment Plan', style: TextStyle(fontWeight: FontWeight.bold)),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Expanded(child: _buildModuleInputField('Modules after 1st Pay', _threePay1Controller)),
+            const SizedBox(width: 16),
+            Expanded(child: _buildModuleInputField('Modules after 2nd Pay', _threePay2Controller)),
+            const SizedBox(width: 16),
+            Expanded(child: _buildModuleInputField('Modules after 3rd Pay', _threePay3Controller)),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildModuleInputField(String label, TextEditingController controller) {
+    return TextFormField(
+      controller: controller,
+      decoration: InputDecoration(
+        labelText: label,
+        border: const OutlineInputBorder(),
+        hintText: '0',
+      ),
+      keyboardType: TextInputType.number,
+      validator: (v) {
+        if (v == null || v.isEmpty) return 'Required';
+        if (int.tryParse(v) == null) return 'Invalid number';
+        return null;
+      },
     );
   }
 }

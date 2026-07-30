@@ -8,7 +8,7 @@ class ModuleListItem extends StatefulWidget {
   final VoidCallback onEdit;
   final VoidCallback onDelete;
   final ScrollController? scrollController;
-  final Function(List<String> lessonIds)? onLessonsReordered;
+  final Function(List<Lesson> lessons)? onLessonsReordered;
   final Function(String moduleId)? onAddLesson;
   final Function(Lesson lesson)? onEditLesson;
   final Function(String lessonId)? onDeleteLesson;
@@ -95,9 +95,7 @@ class _ModuleListItemState extends State<ModuleListItem> {
                       final updatedLessons = List<Lesson>.from(widget.module.lessons);
                       final item = updatedLessons.removeAt(oldIndex);
                       updatedLessons.insert(newIndex, item);
-                      widget.onLessonsReordered?.call(
-                        updatedLessons.map((l) => l.id).toList(),
-                      );
+                      widget.onLessonsReordered?.call(updatedLessons);
                     },
                     children: widget.module.lessons.map((lesson) {
                       return _LessonTile(

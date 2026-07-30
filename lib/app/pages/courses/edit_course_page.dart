@@ -45,6 +45,12 @@ class _EditCoursePageState extends ConsumerState<EditCoursePage> {
   late TextEditingController _durationController;
   late TextEditingController _metaTitleController;
   late TextEditingController _metaDescriptionController;
+  late TextEditingController _singlePayController;
+  late TextEditingController _twoPay1Controller;
+  late TextEditingController _twoPay2Controller;
+  late TextEditingController _threePay1Controller;
+  late TextEditingController _threePay2Controller;
+  late TextEditingController _threePay3Controller;
   String? _thumbnailUrl;
   bool _initialized = false;
 
@@ -58,6 +64,12 @@ class _EditCoursePageState extends ConsumerState<EditCoursePage> {
     _durationController = TextEditingController();
     _metaTitleController = TextEditingController();
     _metaDescriptionController = TextEditingController();
+    _singlePayController = TextEditingController(text: '0');
+    _twoPay1Controller = TextEditingController(text: '0');
+    _twoPay2Controller = TextEditingController(text: '0');
+    _threePay1Controller = TextEditingController(text: '0');
+    _threePay2Controller = TextEditingController(text: '0');
+    _threePay3Controller = TextEditingController(text: '0');
   }
 
   void _initializeFields(Course course) {
@@ -71,6 +83,12 @@ class _EditCoursePageState extends ConsumerState<EditCoursePage> {
         _durationController.text = course.durationHours.toString();
         _metaTitleController.text = course.metaTitle ?? '';
         _metaDescriptionController.text = course.metaDescription ?? '';
+        _singlePayController.text = course.singlePayModules.toString();
+        _twoPay1Controller.text = course.twoPayFirstModules.toString();
+        _twoPay2Controller.text = course.twoPaySecondModules.toString();
+        _threePay1Controller.text = course.threePayFirstModules.toString();
+        _threePay2Controller.text = course.threePaySecondModules.toString();
+        _threePay3Controller.text = course.threePayThirdModules.toString();
         setState(() {
           _thumbnailUrl = course.thumbnailUrl;
           _initialized = true;
@@ -88,6 +106,12 @@ class _EditCoursePageState extends ConsumerState<EditCoursePage> {
     _durationController.dispose();
     _metaTitleController.dispose();
     _metaDescriptionController.dispose();
+    _singlePayController.dispose();
+    _twoPay1Controller.dispose();
+    _twoPay2Controller.dispose();
+    _threePay1Controller.dispose();
+    _threePay2Controller.dispose();
+    _threePay3Controller.dispose();
     super.dispose();
   }
 
@@ -164,6 +188,12 @@ class _EditCoursePageState extends ConsumerState<EditCoursePage> {
                               thumbnailUrl: _thumbnailUrl,
                               metaTitle: _metaTitleController.text,
                               metaDescription: _metaDescriptionController.text,
+                              singlePayModules: int.tryParse(_singlePayController.text) ?? 0,
+                              twoPayFirstModules: int.tryParse(_twoPay1Controller.text) ?? 0,
+                              twoPaySecondModules: int.tryParse(_twoPay2Controller.text) ?? 0,
+                              threePayFirstModules: int.tryParse(_threePay1Controller.text) ?? 0,
+                              threePaySecondModules: int.tryParse(_threePay2Controller.text) ?? 0,
+                              threePayThirdModules: int.tryParse(_threePay3Controller.text) ?? 0,
                             );
 
                             if (context.mounted) LoadingDialog.show(context, message: 'Saving changes...');
@@ -202,7 +232,6 @@ class _EditCoursePageState extends ConsumerState<EditCoursePage> {
           _initializeFields(course);
 
           return SingleChildScrollView(
-            // controller: _scrollController,
             child: ScreenStabilizer(
               isForm: true,
               child: Padding(
@@ -347,10 +376,66 @@ class _EditCoursePageState extends ConsumerState<EditCoursePage> {
                   ),
                 ],
               ),
+              const SizedBox(height: 24),
+              const Divider(),
+              const SizedBox(height: 16),
+              Text('Payment-Based Module Access', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 16),
+              _buildPaymentPlanGrid(),
             ],
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildPaymentPlanGrid() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('One-Time Payment', style: TextStyle(fontWeight: FontWeight.bold)),
+        const SizedBox(height: 8),
+        _buildModuleInputField('Total Accessible Modules', _singlePayController),
+        const Divider(height: 32),
+        const Text('Two-Installment Plan', style: TextStyle(fontWeight: FontWeight.bold)),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Expanded(child: _buildModuleInputField('Modules after 1st Pay', _twoPay1Controller)),
+            const SizedBox(width: 16),
+            Expanded(child: _buildModuleInputField('Modules after 2nd Pay', _twoPay2Controller)),
+          ],
+        ),
+        const Divider(height: 32),
+        const Text('Three-Installment Plan', style: TextStyle(fontWeight: FontWeight.bold)),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Expanded(child: _buildModuleInputField('Modules after 1st Pay', _threePay1Controller)),
+            const SizedBox(width: 16),
+            Expanded(child: _buildModuleInputField('Modules after 2nd Pay', _threePay2Controller)),
+            const SizedBox(width: 16),
+            Expanded(child: _buildModuleInputField('Modules after 3rd Pay', _threePay3Controller)),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildModuleInputField(String label, TextEditingController controller) {
+    return TextFormField(
+      controller: controller,
+      decoration: InputDecoration(
+        labelText: label,
+        border: const OutlineInputBorder(),
+        hintText: '0',
+      ),
+      keyboardType: TextInputType.number,
+      validator: (v) {
+        if (v == null || v.isEmpty) return 'Required';
+        if (int.tryParse(v) == null) return 'Invalid number';
+        return null;
+      },
     );
   }
 
@@ -398,24 +483,25 @@ class _EditCoursePageState extends ConsumerState<EditCoursePage> {
   }
 
   Widget _buildModuleList(List<Module> modules) {
+    // Ensure modules are sorted by order before displaying
+    final sortedModules = List<Module>.from(modules)..sort((a, b) => a.order.compareTo(b.order));
+
     return ReorderableColumn(
       key: const ValueKey('modules_reorderable_column'),
       onReorder: (oldIndex, newIndex) async {
-        final updatedModules = List<Module>.from(modules);
+        final updatedModules = List<Module>.from(sortedModules);
         final item = updatedModules.removeAt(oldIndex);
         updatedModules.insert(newIndex, item);
         
         LoadingDialog.show(context, message: 'Reordering modules...');
         try {
-          await getIt<ModuleRepository>().reorderModules(
-            updatedModules.map((m) => m.id).toList(),
-          );
+          await getIt<ModuleRepository>().reorderModules(updatedModules);
           ref.invalidate(courseModulesProvider(widget.id));
         } finally {
           if (context.mounted) LoadingDialog.hide(context);
         }
       },
-      children: modules.map((module) {
+      children: sortedModules.map((module) {
         return ModuleListItem(
           key: ValueKey(module.id),
           module: module,
@@ -446,10 +532,10 @@ class _EditCoursePageState extends ConsumerState<EditCoursePage> {
                 }
               }
           },
-          onLessonsReordered: (lessonIds) async {
+          onLessonsReordered: (lessons) async {
             LoadingDialog.show(context, message: 'Reordering lessons...');
             try {
-              await getIt<LessonRepository>().reorderLessons(lessonIds);
+              await getIt<LessonRepository>().reorderLessons(lessons);
               ref.invalidate(courseModulesProvider(widget.id));
               ref.invalidate(dashboardStatsProvider);
             } finally {
@@ -985,6 +1071,9 @@ class _EditCoursePageState extends ConsumerState<EditCoursePage> {
                 if (titleController.text.isNotEmpty) {
                   LoadingDialog.show(context, message: 'Creating module...');
                   try {
+                    final modules = await ref.read(courseModulesProvider(widget.id).future);
+                    final nextOrder = modules.isEmpty ? 0 : modules.map((m) => m.order).reduce(max) + 1;
+                    
                     await getIt<ModuleRepository>().createModule(
                       Module(
                         id: "${widget.id}::${List.generate(10, (_) => Random().nextInt(10)).join()}",
@@ -995,7 +1084,7 @@ class _EditCoursePageState extends ConsumerState<EditCoursePage> {
                         videoUrl: selectedType == ModuleType.recorded ? videoUrlController.text : null,
                         liveLink: selectedType == ModuleType.live ? liveLinkController.text : null,
                         recordedVideoUrl: selectedType == ModuleType.live ? recordedVideoUrlController.text : null,
-                        order: 0,
+                        order: nextOrder,
                         lessons: [],
                       ),
                     );

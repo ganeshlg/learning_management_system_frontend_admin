@@ -40,6 +40,12 @@ class RemoteCourseRepository implements CourseRepository {
         'thumbnail_url': course.thumbnailUrl,
         'meta_title': course.metaTitle,
         'meta_description': course.metaDescription,
+        'single_pay_modules': course.singlePayModules,
+        'two_pay_first_modules': course.twoPayFirstModules,
+        'two_pay_second_modules': course.twoPaySecondModules,
+        'three_pay_first_modules': course.threePayFirstModules,
+        'three_pay_second_modules': course.threePaySecondModules,
+        'three_pay_third_modules': course.threePayThirdModules,
       },
       converter: (json) => _mapJsonToCourse(json),
     );
@@ -95,6 +101,22 @@ class RemoteCourseRepository implements CourseRepository {
       queryParameters: {
         'admin_email': admin.email,
         'admin_password': adminPassword,
+      },
+      converter: (json) {
+        final List<dynamic> data = json is List ? json : (json['courses'] ?? []);
+        return data.map((item) => _mapJsonToCourse(item)).toList();
+      },
+    );
+  }
+
+  @override
+  Future<List<Course>> getCoursesForStudent({required String email, String? paymentPlan, int? paidInstallments}) async {
+    return await getIt<NetworkManager>().get<List<Course>>(
+      path: '/courses',
+      queryParameters: {
+        'email': email,
+        if (paymentPlan != null) 'payment_plan': paymentPlan,
+        if (paidInstallments != null) 'paid_installments': paidInstallments,
       },
       converter: (json) {
         final List<dynamic> data = json is List ? json : (json['courses'] ?? []);
@@ -167,6 +189,12 @@ class RemoteCourseRepository implements CourseRepository {
         'thumbnail_url': course.thumbnailUrl,
         'meta_title': course.metaTitle,
         'meta_description': course.metaDescription,
+        'single_pay_modules': course.singlePayModules,
+        'two_pay_first_modules': course.twoPayFirstModules,
+        'two_pay_second_modules': course.twoPaySecondModules,
+        'three_pay_first_modules': course.threePayFirstModules,
+        'three_pay_second_modules': course.threePaySecondModules,
+        'three_pay_third_modules': course.threePayThirdModules,
       },
       converter: (json) => _mapJsonToCourse(json),
     );
@@ -190,10 +218,16 @@ class RemoteCourseRepository implements CourseRepository {
       instructorName: json['instructor_name'] ?? '',
       metaTitle: json['meta_title'],
       metaDescription: json['meta_description'],
-      status: json['is_published'] == true || json['is_published'] == 'true'
+      status: json['is_published'] == 1 || json['is_published'] == true || json['is_published'] == 'true'
           ? CourseStatus.published
           : CourseStatus.draft,
-      modules: []
+      modules: [],
+      singlePayModules: json['single_pay_modules'] ?? 0,
+      twoPayFirstModules: json['two_pay_first_modules'] ?? 0,
+      twoPaySecondModules: json['two_pay_second_modules'] ?? 0,
+      threePayFirstModules: json['three_pay_first_modules'] ?? 0,
+      threePaySecondModules: json['three_pay_second_modules'] ?? 0,
+      threePayThirdModules: json['three_pay_third_modules'] ?? 0,
     );
   }
 }

@@ -5,5 +5,5 @@ abstract class ModuleRepository {
   Future<Module> createModule(Module module);
   Future<Module> updateModule(Module module);
   Future<void> deleteModule(String id);
-  Future<void> reorderModules(List<String> moduleIds);
+  Future<void> reorderModules(List<Module> modules);
 }

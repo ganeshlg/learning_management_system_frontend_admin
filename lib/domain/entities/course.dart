@@ -14,6 +14,14 @@ class Course {
   final CourseStatus status;
   final List<Module> modules;
 
+  // Payment module configurations
+  final int singlePayModules;
+  final int twoPayFirstModules;
+  final int twoPaySecondModules;
+  final int threePayFirstModules;
+  final int threePaySecondModules;
+  final int threePayThirdModules;
+
   Course({
     required this.id,
     required this.title,
@@ -26,6 +34,12 @@ class Course {
     this.metaDescription,
     required this.status,
     this.modules = const [],
+    this.singlePayModules = 0,
+    this.twoPayFirstModules = 0,
+    this.twoPaySecondModules = 0,
+    this.threePayFirstModules = 0,
+    this.threePaySecondModules = 0,
+    this.threePayThirdModules = 0,
   });
 
   Course copyWith({
@@ -40,6 +54,12 @@ class Course {
     String? metaDescription,
     CourseStatus? status,
     List<Module>? modules,
+    int? singlePayModules,
+    int? twoPayFirstModules,
+    int? twoPaySecondModules,
+    int? threePayFirstModules,
+    int? threePaySecondModules,
+    int? threePayThirdModules,
   }) {
     return Course(
       id: id ?? this.id,
@@ -53,6 +73,12 @@ class Course {
       metaDescription: metaDescription ?? this.metaDescription,
       status: status ?? this.status,
       modules: modules ?? this.modules,
+      singlePayModules: singlePayModules ?? this.singlePayModules,
+      twoPayFirstModules: twoPayFirstModules ?? this.twoPayFirstModules,
+      twoPaySecondModules: twoPaySecondModules ?? this.twoPaySecondModules,
+      threePayFirstModules: threePayFirstModules ?? this.threePayFirstModules,
+      threePaySecondModules: threePaySecondModules ?? this.threePaySecondModules,
+      threePayThirdModules: threePayThirdModules ?? this.threePayThirdModules,
     );
   }
 }

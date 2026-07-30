@@ -139,6 +139,8 @@ class _UsersPageState extends ConsumerState<UsersPage> {
                 _detailItem('Email', user.email),
                 _detailItem('Password', user.password ?? 'N/A'),
                 _detailItem('Current Course ID', user.courseId ?? 'N/A'),
+                _detailItem('Payment Plan', user.paymentPlan ?? 'N/A'),
+                _detailItem('Paid Installments', user.paidInstallments?.toString() ?? 'N/A'),
                 const Divider(),
                 const Text('Enrolled Courses', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                 const SizedBox(height: 8),
@@ -259,6 +261,8 @@ class _UsersPageState extends ConsumerState<UsersPage> {
     final declarationController = TextEditingController(text: user?.declaration);
     final signatureController = TextEditingController(text: user?.signature);
     final declarationDateController = TextEditingController(text: user?.declarationDate);
+    String? selectedPaymentPlan = user?.paymentPlan;
+    final paidInstallmentsController = TextEditingController(text: user?.paidInstallments?.toString() ?? '0');
 
     final result = await showDialog<bool>(
       context: context,
@@ -289,6 +293,30 @@ class _UsersPageState extends ConsumerState<UsersPage> {
                         decoration: const InputDecoration(labelText: 'Enrolled Course'),
                         items: availableCourses.map((c) => DropdownMenuItem(value: c, child: Text(c.title))).toList(),
                         onChanged: (val) => selectedCourse = val,
+                      ),
+                    ),
+                  ],
+                ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: DropdownButtonFormField<String>(
+                        value: selectedPaymentPlan,
+                        decoration: const InputDecoration(labelText: 'Payment Plan'),
+                        items: const [
+                          DropdownMenuItem(value: 'One-Time', child: Text('One-Time')),
+                          DropdownMenuItem(value: 'Two-Installment', child: Text('Two-Installment')),
+                          DropdownMenuItem(value: 'Three-Installment', child: Text('Three-Installment')),
+                        ],
+                        onChanged: (val) => selectedPaymentPlan = val,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: TextField(
+                        controller: paidInstallmentsController,
+                        decoration: const InputDecoration(labelText: 'Paid Installments'),
+                        keyboardType: TextInputType.number,
                       ),
                     ),
                   ],
@@ -398,6 +426,8 @@ class _UsersPageState extends ConsumerState<UsersPage> {
           declaration: declarationController.text,
           signature: signatureController.text,
           declarationDate: declarationDateController.text,
+          paymentPlan: selectedPaymentPlan,
+          paidInstallments: int.tryParse(paidInstallmentsController.text) ?? 0,
         );
 
         if (user == null) {

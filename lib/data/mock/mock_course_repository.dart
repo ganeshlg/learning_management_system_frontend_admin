@@ -61,4 +61,11 @@ class MockCourseRepository implements CourseRepository {
       MockData.courses[index] = MockData.courses[index].copyWith(status: CourseStatus.draft);
     }
   }
+
+  @override
+  Future<List<Course>> getCoursesForStudent({required String email, String? paymentPlan, int? paidInstallments}) async {
+    await Future.delayed(const Duration(milliseconds: 500));
+    // In mock, we just return all published courses, but in reality it would filter based on payment stages
+    return MockData.courses.where((c) => c.status == CourseStatus.published).toList();
+  }
 }

@@ -35,7 +35,6 @@ Future<void> initServiceLocator() async {
   getIt.registerLazySingleton<ActivityRepository>(() => RemoteActivityRepository());
   getIt.registerLazySingleton<EnrollmentRepository>(() => RemoteEnrollmentRepository());
   getIt.registerLazySingleton<StudentRepository>(() => RemoteStudentRepository());
-
   //Network Manager
   getIt.registerLazySingleton<NetworkManager>(
         () => NetworkManager(

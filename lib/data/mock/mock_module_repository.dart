@@ -18,6 +18,9 @@ class MockModuleRepository implements ModuleRepository {
       title: module.title,
       description: module.description,
       videoUrl: module.videoUrl,
+      type: module.type,
+      liveLink: module.liveLink,
+      recordedVideoUrl: module.recordedVideoUrl,
       order: module.order,
       lessons: [],
     );
@@ -42,22 +45,10 @@ class MockModuleRepository implements ModuleRepository {
   }
 
   @override
-  Future<void> reorderModules(List<String> moduleIds) async {
+  Future<void> reorderModules(List<Module> modules) async {
     await Future.delayed(const Duration(milliseconds: 500));
-    for (int i = 0; i < moduleIds.length; i++) {
-      final index = MockData.modules.indexWhere((m) => m.id == moduleIds[i]);
-      if (index != -1) {
-        final module = MockData.modules[index];
-        MockData.modules[index] = Module(
-          id: module.id,
-          courseId: module.courseId,
-          title: module.title,
-          description: module.description,
-          videoUrl: module.videoUrl,
-          order: i,
-          lessons: module.lessons,
-        );
-      }
+    for (int i = 0; i < modules.length; i++) {
+      await updateModule(modules[i].copyWith(order: i));
     }
   }
 }

@@ -40,20 +40,10 @@ class MockLessonRepository implements LessonRepository {
   }
 
   @override
-  Future<void> reorderLessons(List<String> lessonIds) async {
+  Future<void> reorderLessons(List<Lesson> lessons) async {
     await Future.delayed(const Duration(milliseconds: 500));
-    for (int i = 0; i < lessonIds.length; i++) {
-      final index = MockData.lessons.indexWhere((l) => l.id == lessonIds[i]);
-      if (index != -1) {
-        final lesson = MockData.lessons[index];
-        MockData.lessons[index] = Lesson(
-          id: lesson.id,
-          moduleId: lesson.moduleId,
-          title: lesson.title,
-          lessonType: lesson.lessonType,
-          order: i,
-        );
-      }
+    for (int i = 0; i < lessons.length; i++) {
+      await updateLesson(lessons[i].copyWith(order: i));
     }
   }
 }
