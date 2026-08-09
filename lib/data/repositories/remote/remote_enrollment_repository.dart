@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:learning_management_system_trainer/domain/entities/admin_user.dart';
+import 'package:learning_management_system_trainer/domain/entities/enrollment.dart';
 import 'package:learning_management_system_trainer/domain/repositories/activity_repository.dart';
 import 'package:learning_management_system_trainer/domain/repositories/admin_auth_repository.dart';
 import 'package:learning_management_system_trainer/domain/repositories/enrollment_repository.dart';
@@ -87,6 +88,130 @@ class RemoteEnrollmentRepository implements EnrollmentRepository {
     getIt<ActivityRepository>().logActivity(
       user: admin.name,
       activity: 'Removed user $email from course $courseId',
+    );
+  }
+
+  @override
+  Future<List<Enrollment>> listEnrollments({String? status}) async {
+    final admin = await getIt<AdminAuthRepository>().getCurrentUser();
+    if (admin == null) throw Exception('Admin not logged in');
+    final adminPassword = await _getAdminPassword();
+
+    final queryParameters = {
+      'admin_email': admin.email,
+      'admin_password': adminPassword,
+    };
+    if (status != null) {
+      queryParameters['status'] = status;
+    }
+
+    return await getIt<NetworkManager>().get<List<Enrollment>>(
+      path: '/admin/enrollments',
+      queryParameters: queryParameters,
+      converter: (json) {
+        final List<dynamic> data = json is List ? json : (json['enrollments'] ?? []);
+        return data.map((item) => Enrollment.fromJson(item)).toList();
+      },
+    );
+  }
+
+  @override
+  Future<Enrollment> getEnrollment(int id) async {
+    final admin = await getIt<AdminAuthRepository>().getCurrentUser();
+    if (admin == null) throw Exception('Admin not logged in');
+    final adminPassword = await _getAdminPassword();
+
+    return await getIt<NetworkManager>().get<Enrollment>(
+      path: '/admin/enrollments/$id',
+      queryParameters: {
+        'admin_email': admin.email,
+        'admin_password': adminPassword,
+      },
+      converter: (json) => Enrollment.fromJson(json),
+    );
+  }
+
+  @override
+  Future<void> verifyPayment(int id) async {
+    final admin = await getIt<AdminAuthRepository>().getCurrentUser();
+    if (admin == null) throw Exception('Admin not logged in');
+    final adminPassword = await _getAdminPassword();
+
+    await getIt<NetworkManager>().post(
+      path: '/admin/enrollments/$id/verify-payment',
+      body: {
+        'admin_email': admin.email,
+        'admin_password': adminPassword,
+      },
+      converter: (json) => json,
+    );
+
+    getIt<ActivityRepository>().logActivity(
+      user: admin.name,
+      activity: 'Verified payment for enrollment $id',
+    );
+  }
+
+  @override
+  Future<void> admitUser(int id) async {
+    final admin = await getIt<AdminAuthRepository>().getCurrentUser();
+    if (admin == null) throw Exception('Admin not logged in');
+    final adminPassword = await _getAdminPassword();
+
+    await getIt<NetworkManager>().post(
+      path: '/admin/enrollments/$id/admit',
+      body: {
+        'admin_email': admin.email,
+        'admin_password': adminPassword,
+      },
+      converter: (json) => json,
+    );
+
+    getIt<ActivityRepository>().logActivity(
+      user: admin.name,
+      activity: 'Admitted enrollment $id',
+    );
+  }
+
+  @override
+  Future<void> rejectEnrollment(int id) async {
+    final admin = await getIt<AdminAuthRepository>().getCurrentUser();
+    if (admin == null) throw Exception('Admin not logged in');
+    final adminPassword = await _getAdminPassword();
+
+    await getIt<NetworkManager>().post(
+      path: '/admin/enrollments/$id/reject',
+      body: {
+        'admin_email': admin.email,
+        'admin_password': adminPassword,
+      },
+      converter: (json) => json,
+    );
+
+    getIt<ActivityRepository>().logActivity(
+      user: admin.name,
+      activity: 'Rejected enrollment $id',
+    );
+  }
+
+  @override
+  Future<void> resendSetupEmail(int id) async {
+    final admin = await getIt<AdminAuthRepository>().getCurrentUser();
+    if (admin == null) throw Exception('Admin not logged in');
+    final adminPassword = await _getAdminPassword();
+
+    await getIt<NetworkManager>().post(
+      path: '/admin/enrollments/$id/resend-setup-email',
+      body: {
+        'admin_email': admin.email,
+        'admin_password': adminPassword,
+      },
+      converter: (json) => json,
+    );
+
+    getIt<ActivityRepository>().logActivity(
+      user: admin.name,
+      activity: 'Resent setup email for enrollment $id',
     );
   }
 }
